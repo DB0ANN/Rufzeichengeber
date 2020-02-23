@@ -1,0 +1,15 @@
+# ignore build output
+Debug
+Release
+
+# debug settings are host specific
+*.launch
+
+# Eclipse settings
+.settings/
+
+# CubeMX Specific files
+.mxproject
+
+# Ignore mac files
+.DS_Store
