@@ -3,8 +3,10 @@
  *
  * This module is responsible for generating the call sign.
  *
- * This module will use Timer1 and Timer2!
- * TODO change timer 3 and 4. Do the repetition conter in sw.
+ * This module will use Timer3 and Timer4!
+ *
+ * Timer3: prescaler tuned for 100 Hz counter clock
+ * Timer4: prescaler tuned for  1 kHz counter clock
  */
 
 /* Includes ------------------------------------------------------------------*/
@@ -64,6 +66,7 @@ static const char cwTable[36][6] =
 
 // Definition auto generated in main.c
 extern TIM_HandleTypeDef htim3;
+extern TIM_HandleTypeDef htim4;
 
 /* cw call index
  * needed for output generation
@@ -153,7 +156,7 @@ int appendCwString(char *out, const char *in)
         if (i++ > 5)
             return i-1;
         // copy char
-        *++out = *in++;
+        *out++ = *in++;
     }
     return i;
 }
@@ -191,7 +194,7 @@ int callInit(CallCfg *cfg)
         // append cw to table
         o += appendCwString( &cwCall[o], &cwTable[cti][0]);
         // append space
-        cwCall[++o] = ' ';
+        cwCall[o++] = ' ';
         i++;
     }
     // in case a locator is given => change space to word separator
@@ -210,7 +213,7 @@ int callInit(CallCfg *cfg)
         // append cw to table
         o += appendCwString( &cwCall[o], &cwTable[cti][0]);
         // append space
-        cwCall[++o] = ' ';
+        cwCall[o++] = ' ';
         i++;
     }
     // add end marking
@@ -224,27 +227,23 @@ int callInit(CallCfg *cfg)
 
 void callStart(void)
 {
-    ;
+    callBeginSign();
+    HAL_TIM_Base_Start_IT(&htim3);
 }
 
 void callStop(void)
 {
-    ;
+    HAL_TIM_Base_Stop_IT(&htim3);
 }
 
 void callBeginSign(void)
 {
-    TIM_TypeDef *TIMx = TIM1;
-
     // reset CW index
     cwIndex = 0;
-    // set repetition counter
-    // add 6 off cycles => total 7 cycles
-    TIMx->RCR = 5;
-    // switch of tx
-    HAL_GPIO_WritePin(port, pin, txOff);
+    // execute first cycle
+    callNextStep();
     // start timer
-    HAL_TIM_Base_Start_IT(&htim3);
+    HAL_TIM_Base_Start_IT(&htim4);
 }
 
 void callNextStep(void)
@@ -253,58 +252,61 @@ void callNextStep(void)
      * and tx on on odd numbers. Through this we will have always one cycle off
      * before the sign.
      */
-    TIM_TypeDef *TIMx = TIM1;
+
+    static int wait = 0;        // wait for cycles before increasing cwIndex
+    if ( --wait > 0 )
+        return;
 
     //check if space needs to be send
-    if (1 == cwIndex % 2)
+    if (0 == cwIndex % 2)
+    {
+
+        // even number => send idle first
+        if (cwIndex == 0)
+            wait = 7;   // special case first cycle
+        else
+            wait = 1;
+        // switch off
+        HAL_GPIO_WritePin(port, pin, txOff);
+    }
+    else
     {
         // transmit a sign
         switch (cwCall[cwIndex/2])
         {
-            case '.':
-                // dot => one cycle on
+            case '.':   // dot => one cycle on
                 HAL_GPIO_WritePin(port, pin, txOn);
-                TIMx->RCR = 0;
+                wait = 1;
                 break;
-            case '-':
-                // dash => three cycles on
+            case '-':   // dash => three cycles on
                 HAL_GPIO_WritePin(port, pin, txOn);
-                TIMx->RCR = 2;
+                wait = 3;
                 break;
-            case ' ':
-                // character separator, add 1 off cycles => total 3 cycles off
-                //HAL_GPIO_WritePin(port, pin, txOff);
-                TIMx->RCR = 0;
+            case ' ':   // separator, add 1 cycles => total 3 cycles off
+                //HAL_GPIO_WritePin(port, pin, txOff);  // already switched off
+                wait = 1;
                 break;
-            case '_':
-                // word separator, add 5 off cycles => total 7 cycles off
+            case '_':   // word separator, 7 cycles off
                 //HAL_GPIO_WritePin(port, pin, txOff);
-                TIMx->RCR = 4;
+                wait = 5;
                 break;
-            case 'E':
-                // end of cw id, add 5 off cycles => total 7 cycles off
+            case 'E':   // end of cw id, 7 cycles off
                 //HAL_GPIO_WritePin(port, pin, txOff);
-                TIMx->RCR = 4;
+                wait = 5;
                 break;
             case '\0':
                 // end of call sign
                 // switch TX on
                 HAL_GPIO_WritePin(port, pin, txOn);
                 // stop the timer
-                HAL_TIM_Base_Stop(&htim3);
+                HAL_TIM_Base_Stop(&htim4);
                 break;
             default:
                 // something went wrong => stop cw
                 cwIndex = 0;
-                HAL_TIM_Base_Stop(&htim3);
+                HAL_TIM_Base_Stop(&htim4);
                 break;
         }
-    }
-    else
-    {
-        // separator between dot or dash => one cycle off
-        HAL_GPIO_WritePin(port, pin, txOff);
-        TIMx->RCR = 0;
     }
     cwIndex++;
 }

@@ -105,21 +105,16 @@ int main(void)
   MX_TIM4_Init();
   /* USER CODE BEGIN 2 */
 
-  HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
-  HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
-
-//  HAL_TIM_Base_Start_IT(&htim1);
   CallCfg cwCfg = {
           .GPIOx = LD2_GPIO_Port,
           .GPIO_Pin = LD2_Pin,
           .TxActive = GPIO_PIN_SET,
           .callSign = { "DF0ANN" },
-//          .locator = { "JN59PL72" }
-          .locator = { "" }
+          .locator = { "JN59PL72" }
   };
   callInit(&cwCfg);
 
-//  callBeginSign();
+  callStart();
 
   /* USER CODE END 2 */
  
@@ -161,7 +156,7 @@ void SystemClock_Config(void)
                               |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
   RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_HSI;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
-  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
+  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV4;
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
 
   if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_0) != HAL_OK)
@@ -189,9 +184,9 @@ static void MX_TIM3_Init(void)
 
   /* USER CODE END TIM3_Init 1 */
   htim3.Instance = TIM3;
-  htim3.Init.Prescaler = 19999;
+  htim3.Init.Prescaler = 39999;
   htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim3.Init.Period = 60000;
+  htim3.Init.Period = 6000;
   htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV4;
   htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim3) != HAL_OK)
@@ -234,9 +229,9 @@ static void MX_TIM4_Init(void)
 
   /* USER CODE END TIM4_Init 1 */
   htim4.Instance = TIM4;
-  htim4.Init.Prescaler = 1999;
+  htim4.Init.Prescaler = 3999;
   htim4.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim4.Init.Period = 1000;
+  htim4.Init.Period = 100;
   htim4.Init.ClockDivision = TIM_CLOCKDIVISION_DIV4;
   htim4.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim4) != HAL_OK)
