@@ -1,5 +1,9 @@
 /* USER CODE BEGIN Header */
-/* SPDX-License-Identifier: BSD-3-Clause */
+/* SPDX-License-Identifier: BSD-3-Clause
+ * Author: Johannes Eigner, DH4NES
+ *
+ * Main file of call sign generator.
+ */
 /**
   ******************************************************************************
   * @file           : main.c
@@ -24,6 +28,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "Callsign.h"
 
 /* USER CODE END Includes */
 
@@ -100,9 +105,22 @@ int main(void)
   HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
   HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
 
-//  HAL_TIM_
-//  HAL_TIM_Base_Start(&htim1);
-  HAL_TIM_Base_Start_IT(&htim1);
+//  HAL_TIM_Base_Start_IT(&htim1);
+  CallCfg cconf;
+  cconf.GPIOx = LD2_GPIO_Port;
+  cconf.GPIO_Pin = LD2_Pin;
+  cconf.TxActive = GPIO_PIN_SET;
+  CallCfg cwCfg = {
+          .GPIOx = LD2_GPIO_Port,
+          .GPIO_Pin = LD2_Pin,
+          .TxActive = GPIO_PIN_SET,
+          .callSign = { "DF0ANN" },
+//          .locator = { "JN59PL72" }
+          .locator = { "" }
+  };
+  callInit(&cwCfg);
+
+//  callBeginSign();
 
   /* USER CODE END 2 */
  
@@ -133,9 +151,7 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
   RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
-  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
-  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI_DIV2;
-  RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL4;
+  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_NONE;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
     Error_Handler();
@@ -144,7 +160,7 @@ void SystemClock_Config(void)
   */
   RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
                               |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
-  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
+  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_HSI;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
@@ -174,10 +190,10 @@ static void MX_TIM1_Init(void)
 
   /* USER CODE END TIM1_Init 1 */
   htim1.Instance = TIM1;
-  htim1.Init.Prescaler = 3999;
+  htim1.Init.Prescaler = 1999;
   htim1.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim1.Init.Period = 1000;
-  htim1.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim1.Init.Period = 2000;
+  htim1.Init.ClockDivision = TIM_CLOCKDIVISION_DIV4;
   htim1.Init.RepetitionCounter = 0;
   htim1.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim1) != HAL_OK)
