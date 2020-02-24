@@ -63,7 +63,7 @@ static const char cwTable[36][6] =
 /* Private variables ---------------------------------------------------------*/
 
 // Definition auto generated in main.c
-extern TIM_HandleTypeDef htim1;
+extern TIM_HandleTypeDef htim3;
 
 /* cw call index
  * needed for output generation
@@ -244,7 +244,7 @@ void callBeginSign(void)
     // switch of tx
     HAL_GPIO_WritePin(port, pin, txOff);
     // start timer
-    HAL_TIM_Base_Start_IT(&htim1);
+    HAL_TIM_Base_Start_IT(&htim3);
 }
 
 void callNextStep(void)
@@ -291,12 +291,12 @@ void callNextStep(void)
                 // switch TX on
                 HAL_GPIO_WritePin(port, pin, txOn);
                 // stop the timer
-                HAL_TIM_Base_Stop(&htim1);
+                HAL_TIM_Base_Stop(&htim3);
                 break;
             default:
                 // something went wrong => stop cw
                 cwIndex = 0;
-                HAL_TIM_Base_Stop(&htim1);
+                HAL_TIM_Base_Stop(&htim3);
                 break;
         }
     }
